@@ -1,44 +1,28 @@
 # --- 
 # allow normal rodsuser to register files into iRODS
 
+# -- this rule set should exist HPC server side only!
+
 acSetChkFilePathPerm { msiSetChkFilePathPerm("noChkPathPerm"); }
 
-object_is_image_type(*_f, *_flag) {
-    *_flag = false;
-    if (*_f like "*.jpg" || *_f like "*.jpeg" || *_f like "*.bmp" ||
-        *_f like "*.tif" || *_f like "*.tiff" || *_f like "*.rif" ||
-        *_f like "*.gif" || *_f like "*.png"  || *_f like "*.svg" ||
-        *_f like "*.xpm") {
-        *_flag = true;
-    }
+rmtExec_singularity2 ( *compute_container_args, *intermediate_args, *postproc_container_args )
+{
+  msiExecCmd("hello2", "*postproc_container_args", "null", "null", "null",  *OUT);
 }
 
-determine_destination_resource(*_obj_path) {
-    *image_flag = false;
-    object_is_image_type(*_obj_path, *image_flag)
-    *resc_name = "demoResc" 
-    if(true == *image_flag) {
-        *resc_name = "img_resc"
-    }
-    msiSetDefaultResc(*resc_name,"preferred");
-    *obj_path = *_obj_path
-    writeLine("serverLog", "[*resc_name] was preferred for [[ *obj_path ]]. ")
-}
-
-acSetRescSchemeForCreate {
-  determine_destination_resource($objPath)
-}
-
-rmtExec_singularity( *host , *arg ) 
+rmtExec_singularity( *compute_container_args, *intermediate_args, *postproc_container_args )
 {
   *user = ""
+
   get_irods_username (*user)
   
-  remote("*host", "") {
-    writeLine("serverLog", "rmtExec - host [*host] remote cmd [*arg] by [*user] ")
-    #msiExecCmd("hello","*arg *arg2","null","null","null",*OUT)
-    #remotePythonService ( *arg )
+  if (*user != '') {
+    msiExecCmd("submit_contained_job_via_Slurm.sh", "/var/lib/irods/compute/singularity.SLURM " ++
+               " -u *user *intermediate_args --postproc '*postproc_container_args' "++
+               " *compute_container_args",
+               "null","null","null",*OUT)
   }
 }
+
 
 

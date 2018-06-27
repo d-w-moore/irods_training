@@ -4,18 +4,24 @@ project(irods_hpc_compute_to_data_example C CXX)
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/spawn_rmt_singularity.r
+  ${CMAKE_SOURCE_DIR}/spawn_remote_containers.r
   DESTINATION ${IRODS_HOME_DIRECTORY}
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/wrap_singularity
-  ${CMAKE_SOURCE_DIR}/singularity.SLURM
-  ${CMAKE_SOURCE_DIR}/submit_SLURM_job.sh
+  ${CMAKE_SOURCE_DIR}/submit_contained_job_via_Slurm.sh
   DESTINATION ${IRODS_HOME_DIRECTORY}/msiExecCmd_bin
   PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ WORLD_READ
+  )
+
+install(
+  FILES
+  ${CMAKE_SOURCE_DIR}/compute/wrap_singularity
+  ${CMAKE_SOURCE_DIR}/compute/singularity.SLURM
+  DESTINATION ${IRODS_HOME_DIRECTORY}/compute
+  PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
   )
 
 install(

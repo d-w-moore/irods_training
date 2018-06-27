@@ -12,27 +12,3 @@ def get_irods_username (rule_args, callback, rei):
     client_username = userrec.get('user_name','')
   rule_args[0] = client_username
 
-# =-=-=-=- # =-=-=-=- # =-=-=-=-
-# imported from core.py.template, just in case
-#   needed for debug
-
-def writeStringToCharArray(s, char_array):
-    for i in range(0, len(s)):
-        char_array[i] = s[i]
-
-def pythonRuleEnginePluginTest(rule_args, callback, rei):
-    callback.writeLine('serverLog','in prepTest2 path={!r}'.format (sys.path))
-    callback.writeLine('serverLog','in prepTest2 map={!r}'.format(session_vars.get_map(rei)) )
-    with open('/tmp/from_core_py.txt', 'a') as f:
-        f.write(str(datetime.datetime.now()))
-        f.write('\n')
-        c = 0
-        for arg in rule_args:
-            f.write('\t')
-            f.write(str(c))
-            f.write(' : ')
-            f.write(str(arg))
-            f.write('\n')
-            c = c +1
-    callback.writeLine('serverLog', 'Printed to server log from python rule engine')
-
