@@ -34,6 +34,7 @@ install(
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/compute_to_data.re
+  ${CMAKE_SOURCE_DIR}/route_data.re
   ${CMAKE_SOURCE_DIR}/core.py.compute_to_data
   DESTINATION etc/irods
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
