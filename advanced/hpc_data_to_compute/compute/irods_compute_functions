@@ -92,3 +92,20 @@ get_irods_slurm_var ()
 
   return $status
 }
+
+# -- Delete any form of '-u option' from argument, and anticipate 
+#    other forms, eg. when "-vu user" is interpreted as "-v -u user"
+
+delete_u_options ()
+{
+  local options=$'\040'"$1"
+  local userpattern="[^[:space:]]+"
+  local regex="(.*)[[:space:]]-[^[:space:]]*u[[:space:]]*$userpattern[[:space:]]*(.*)"
+  local counter=64
+  while [[ $options =~ $regex && $((counter--)) -gt 0 ]] ; do
+    options="${BASH_REMATCH[1]}"$'\040'"${BASH_REMATCH[2]}"
+  done
+  echo "$options"
+  [[ $counter -ge 0 ]]
+}
+
