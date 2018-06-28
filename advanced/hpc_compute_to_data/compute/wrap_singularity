@@ -21,17 +21,21 @@ if [ $subcommand = "nop" ] ; then
 fi
 
 pull_image() {  
+   local FORCE_FLAG=0
+   [ "$2" = "-f" ] && { FORCE_FLAG=1;  }
    [ -n "$1" ] && [[ $1 != */* ]] || return 2; 
    local TGT="${PATH_TO_COMPUTE}/$1.simg"
    echo "$TGT - being pulled. " >&2
-   if [ ! -f "$TGT" ]  ; then
+   if [ "$FORCE_FLAG" -ne 0 -o ! -f "$TGT" ]  ; then
        SOURCE="${Singularity_Sources[$1]}" 
        [ -n "$SOURCE" ] || { echo -n "image URI not found, try:" 
          echo " shub://... or docker://... " >&2 ; return 1 ; }
        echo  $'\t using '"'$SOURCE'" >&2
        echo  $'\t (please wait ...)' >&2
-       ( cd $DIR && ${singularity} pull --name $(basename "$TGT") "$SOURCE"  && \
-         mv $(basename "$TGT") "$PATH_TO_COMPUTE"/.
+       ( [ "$FORCE_FLAG" -ne 0 ] && rm -f "$TGT"
+         cd "$DIR"
+         ${singularity} pull --force --name $(basename "$TGT") "$SOURCE" && \
+         [ ! -f "$TGT" ] && mv $(basename "$TGT") "$PATH_TO_COMPUTE"/.
        ) >/dev/null 2>&1
        echo  >&2 # carriage return
    else
@@ -45,7 +49,7 @@ case "$1" in
 
     case "$subcommand" in 
 
-      pull) pull_image $1 ;;
+      pull) pull_image $1 $2 ;;
 
       exec) IMAGE="$1" ; shift 
 
@@ -59,7 +63,7 @@ case "$1" in
 
     case $subcommand in
 
-      pull) pull_image $1 ;;
+      pull) pull_image $1 $2 ;;
 
       exec) IMAGE="$1" ; shift
 
@@ -75,10 +79,11 @@ case "$1" in
 	  shift 2
 	  ${singularity} exec -c $dir_bind_opts "$IMAGE".simg \
             '/usr/local/bin/python3' '/make_thumbnail.py' "$1" "/src/$2" "/dst/$3" "$4"
-        else exit 1
-          ## -- for debugging only. not secure for production!
-	  # echo "RUNNING /bin/bash - in SINGULARITY : ($IMAGE.simg)" >&2 
-          # ${singularity} exec -c $dir_bind_opts "$IMAGE".simg "/bin/bash"
+        else
+            ## -- uncomment the below for debugging only (not secure for production!)
+	    # echo "RUNNING /bin/bash - in SINGULARITY : ($IMAGE.simg)" >&2 
+            # ${singularity} exec -c $dir_bind_opts "$IMAGE".simg "/bin/bash"
+          exit 1
 	fi
       ;;
     esac
