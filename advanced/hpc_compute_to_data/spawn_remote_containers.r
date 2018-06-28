@@ -39,7 +39,9 @@ testRule
 
     remote(*host, "") {
 
+      *collection_out = "*input_file_name" ++ "_thumbnails"
       *tmpdir = "/tmp/irods/thumbnails"
+
       *user = ""
       get_irods_username(*user)
 
@@ -49,10 +51,12 @@ testRule
           *output_file =  "*input_file_name" ++ "_*size" ++ "*input_file_ext"
 
           # - parameters & input/output directories for thumbnail compute container
-          *container_opts = "exec thumbnail_image " ++ 
+          *container_opts = "exec thumbnail_image " ++
+                            "--resc_for_bind '*image_compute_resc' " ++
                             "--bind *src_phy_dir/:/src --bind *tmpdir/:/dst " ++ 
                             " /usr/bin/python3 /make_thumbnail.py " ++
-                            " *size *input_file *output_file /tempZone/home/*user "
+                            " *size *input_file *output_file " ++ 
+                            "/tempZone/home/*user/*collection_out "
 
           # - location & parameters for intermediate products
           *interface_opts = "--outdir *tmpdir" 

@@ -7,6 +7,10 @@ singularity="/usr/local/bin/singularity"
 
 subcommand="$1"; shift
 
+get_vault_for_resc() {
+  iquest %s "select RESC_VAULT_PATH where RESC_NAME = '$1'"; 
+}
+
 [ -z "$subcommand" ] && {
   echo $'\n\t'"== Local singularity images index =="$'\n'
   for key in ${!Singularity_Sources[*]}; do
@@ -66,15 +70,33 @@ case "$1" in
       pull) pull_image $1 $2 ;;
 
       exec) IMAGE="$1" ; shift
+        # ----------------------------------------------------
+        # for security's sake, vet names of directories being 
+        #    '--bind'ed to /src and /dst
 
-        dir_bind_opts="" # -- for now only allow /tmp and subdirectories
+        resc_vault=""
 
-        while [[ $1 = --bind && $2 == /tmp/*:/@(dst|src) ]]; do
-          dir_bind_opts+=" $1 $2 "; shift 2
+        while [ "$1" = --resc_for_bind ] ; do 
+          [ -n "$2" ] && resc_vault=$(get_vault_for_resc "$2")
+          shift 2
         done
+
+        dir_bind_opts="" 
+
+        while [ "$1" = --bind ] ; do 
+          if [[ ( $resc_vault != "" && $2 == $resc_vault/*:/src ) ||
+                ( $2 == /tmp/*:/dst )
+          ]]
+          then
+                dir_bind_opts+=" $1 $2 "
+          fi
+          shift 2
+        done
+
         cd "${PATH_TO_COMPUTE}" 
 
-        #-- docker-inherited container; use specific python binary and scriptname
+        #-- docker - inherited container; use specific python binary and scriptname
+
 	if [[ $1 = /usr/*/python3 && $2 = /make_thumbnail.py ]]; then
 	  shift 2
 	  ${singularity} exec -c $dir_bind_opts "$IMAGE".simg \
