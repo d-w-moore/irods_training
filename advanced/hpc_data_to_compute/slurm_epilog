@@ -17,7 +17,7 @@ fi
 
 # post_processing_options=$(get_irods_slurm_var "post_processing")
 # if [ $? -eq 0 ] ; then
-#   CMD="/var/lib/irods/msiExecCmd_bin/wrap_singularity exec metadata_addtags"
+#   CMD="/var/lib/irods/compute/wrap_singularity exec metadata_addtags"
 #   CMD+=" $post_processing_options "
 #   STATUS="" ; $CMD ; STATUS="$?"
 #   { echo "$(date) - status=($STATUS) after post-processing with:"

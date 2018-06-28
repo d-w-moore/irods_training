@@ -33,7 +33,7 @@ while [[ $1 = --* ]] ; do
 
     if [ -n "$postproc_opts" ] ; then
       set_irods_slurm_var "post_processing" "$postproc_opts"
-      #echo postproc_opts "'$postproc_opts'" >>/tmp/middle - dwm
+      #echo postproc_opts "'$postproc_opts'" >>/tmp/contained_apps_log
     fi
   fi
 
