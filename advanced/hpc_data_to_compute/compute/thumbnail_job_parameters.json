@@ -1,0 +1,5 @@
+{
+  "sizes" : [ "1024x1024", "512x512", "256x256", "128x128" ],
+  "collection_name" : "%(imageName)s_thumbnails",
+  "command_values":["imageName", "requested_size"]
+}
