@@ -238,65 +238,6 @@ def object_path_by_resource( obj, resourceName ):
   r = repls_on_resc[0]
   return ( r.path )
 
-# ---
-
-def do_replicate_input (cmd_line_args):
-
-    success = False
-
-    subparser=argparse.ArgumentParser();
-    subparser.add_argument('--skip-if-exists',  action='store_true', default=False)
-    subparser.add_argument('misc', nargs=argparse.REMAINDER)
-    args = subparser.parse_args( cmd_line_args )
-
-    input_resc = jobParams() ['imageCompute_resc']
-    input_path = jobParams() ['input_path']
-
-    sess = session_object()
-    
-    if type ( input_resc ) is tuple: 
-      try:
-        (key,val) = input_resc
-        input_resc = sess.query (
-          ResourceMeta.name, ResourceMeta.value, 
-          Resource.name ). filter (
-                             ResourceMeta.name == key,
-                             ResourceMeta.value == val  ).one() [Resource.name]
-      except Exception as e:
-        msg = "Incorrect 'input_resc' value in config file: {!r}".format(input_resc)
-        computeLogger().error(msg) ; raise SystemExit (msg)
-
-    try:
-      obj = sess.data_objects.get(input_path)
-    except:
-      msg =  "Object '{}' does not exist" .format(input_path) 
-      computeLogger().error(msg) ; raise SystemExit (msg)
-
-    if args.skip_if_exists and exists_on_resource(obj, input_resc, test_status = False):
-      return True
-
-    old_repl = new_repl = None
-
-    staged_replicas = [x for x in obj.replicas if x.resource_name == 'demoResc' ]
-
-    if staged_replicas : old_repl = staged_replicas [0]  
-    else :
-      computeLogger().error ("no input could be found at '{}'".format(input_path))
-
-    try :
-      obj.replicate ( input_resc , ** checksumOptions() )
-      obj = sess.data_objects.get(input_path)
-      new_repl = [x for x in obj.replicas if x.resource_name == input_resc ][0]
-    except :
-      pass
-    
-    if check_replica_status( new_repl , compare_to = old_repl ):
-      success = True
-    else: 
-      computeLogger().error ("no input could be replicated at '{}'".format(input_path))
-    return success
-
-# ---
 
 def register_replicate_and_trim_thumbnail ( size_string ):
 
@@ -367,11 +308,11 @@ if __name__ == '__main__':
 
    checksum_options = checksumOptions()
 
-   if args.command == 'replicate_input':
-     do_replicate_input( args.remainder )
-   elif args.command == 'reg_repl_trim_output' :
+   if args.command == 'reg_repl_trim_output' :
      assert len(args.remainder) == 1, "need a size string ('NxN') as argument"
      register_replicate_and_trim_thumbnail ( size_string = args.remainder[0] )
+   #elif  args.command == '...' :
+     # ... 
    else:
      computeLogger().info("ran {} with command argument '{}'".format(
        os.path.basename (sys.argv[0]), args.command )
