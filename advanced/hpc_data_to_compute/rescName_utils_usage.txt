@@ -1,0 +1,9 @@
+ubuntu@ip-172-31-62-75:~/irods_training/advanced/hpc_data_to_compute$ irule -F rescName_from_compute_role.r  "*role_value='IMAGE_PROCESSING'"
+img_resc
+ubuntu@ip-172-31-62-75:~/irods_training/advanced/hpc_data_to_compute$ irule -F rescName_from_compute_role.r  "*role_value='LONG_TERM_STORAGE'"
+lts_resc
+ubuntu@ip-172-31-62-75:~/irods_training/advanced/hpc_data_to_compute$ ./rescName_from_metadata_kvpair.sh  IMAGE_PROCESSING
+img_resc
+ubuntu@ip-172-31-62-75:~/irods_training/advanced/hpc_data_to_compute$ ./rescName_from_metadata_kvpair.sh  LONG_TERM_STORAGE
+lts_resc
+

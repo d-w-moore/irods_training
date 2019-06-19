@@ -4,7 +4,6 @@ project(irods_hpc_data_to_compute_example C CXX)
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/data_to_compute.re
   ${CMAKE_SOURCE_DIR}/core.py.data_to_compute
   DESTINATION etc/irods
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
