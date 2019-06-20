@@ -12,12 +12,10 @@ install(
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/spawn_remote_slurm_jobs.r
-  ${CMAKE_SOURCE_DIR}/rescName_from_kvpair.r
-  ${CMAKE_SOURCE_DIR}/detect_thumbnails.py
+  ${CMAKE_SOURCE_DIR}/rescName_from_compute_role.r
   DESTINATION ${IRODS_HOME_DIRECTORY}
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )
-
 
 install(
   FILES
@@ -27,14 +25,14 @@ install(
   ${CMAKE_SOURCE_DIR}/compute/__init__.py
   ${CMAKE_SOURCE_DIR}/compute/irods_compute_functions
   DESTINATION ${IRODS_HOME_DIRECTORY}/compute
-  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   )
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/compute/admin_as_rodsuser.json
-  DESTINATION ${IRODS_HOME_DIRECTORY}/compute
-  PERMISSIONS OWNER_READ OWNER_WRITE
+  ${CMAKE_SOURCE_DIR}/rescName_from_compute_role_kvpair.sh
+  DESTINATION ${IRODS_HOME_DIRECTORY}
+  PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
   )
 
 install(
