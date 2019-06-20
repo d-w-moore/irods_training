@@ -9,10 +9,6 @@ RUN apt-get update && apt-get install -y vim less
 
 RUN groupadd -g $IRODS_GID irods && usermod -aG irods jovyan 
 
-#RUN /opt/conda/bin/conda init 
-
-#RUN /opt/conda/bin/conda install -y -c conda-forge matplotlib numpy
-
 ADD lpfilter.ipynb /home/jovyan/work/.
 
 COPY mymodule/ /home/jovyan/work/mymodule/
@@ -20,6 +16,7 @@ COPY mymodule/ /home/jovyan/work/mymodule/
 RUN chown jovyan.users /home/jovyan/work/lpfilter.ipynb
 
 COPY mymodule/ /home/jovyan/work/mymodule
+
 RUN chown -R jovyan.users /home/jovyan/work/mymodule
 
 USER jovyan
