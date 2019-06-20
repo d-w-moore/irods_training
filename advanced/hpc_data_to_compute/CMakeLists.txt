@@ -5,7 +5,6 @@ project(irods_hpc_data_to_compute_example C CXX)
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/data_to_compute.re
-  ${CMAKE_SOURCE_DIR}/core.py.data_to_compute
   DESTINATION etc/irods
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )
@@ -13,8 +12,6 @@ install(
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/spawn_remote_slurm_jobs.r
-  ${CMAKE_SOURCE_DIR}/rescName_from_kvpair.r
-  ${CMAKE_SOURCE_DIR}/detect_thumbnails.py
   DESTINATION ${IRODS_HOME_DIRECTORY}
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )
