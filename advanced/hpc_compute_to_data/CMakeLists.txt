@@ -11,6 +11,14 @@ install(
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )
 
+install(
+  FILES
+  ${CMAKE_SOURCE_DIR}/task_config.json
+  ${CMAKE_SOURCE_DIR}/spawn_remote_containers.r
+  DESTINATION home/ubuntu
+  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+  )
+
 if (NOT CPACK_PACKAGING_INSTALL_PREFIX)
   set(CPACK_PACKAGING_INSTALL_PREFIX "/" CACHE STRING "Package root path. \"/\" is correct for normal package builds.." FORCE)
   message(STATUS "Setting unspecified CPACK_PACKAGING_INSTALL_PREFIX to '${CPACK_PACKAGING_INSTALL_PREFIX}'. This is the correct setting for normal builds.")

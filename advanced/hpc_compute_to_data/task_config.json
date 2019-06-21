@@ -15,8 +15,8 @@
         }
     },
     "external": {
-        "src_collection" : "/tempZone/home/public/alice/test_inputs",
-        "dst_collection" : "/tempZone/home/public/alice/test_outputs"
+        "src_collection" : "/tempZone/home/alice/notebook_input",
+        "dst_collection" : "/tempZone/home/alice/notebook_output"
     },
     "internal": {
         "src_directory": "/inputs",
