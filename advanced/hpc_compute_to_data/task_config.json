@@ -9,7 +9,7 @@
                     "/home/jovyan/work/lpfilter.ipynb"
          ],
         "environment": {
-            "INPUT_FILE_PATH" : "/inputs/%(INPUT_FILE_BASENAME)s",
+            "INPUT_FILE_PATH" : "/inputs/%(INPUT_FILE_RELPATH)s",
             "CUTOFF_FREQUENCY_INDEX" : "0",
             "OUTPUT_FILE_PATH" : "/outputs/lowpass_filtered_%(INPUT_FILE_BASENAME)s"
         }

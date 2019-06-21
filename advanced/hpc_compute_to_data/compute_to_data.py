@@ -84,11 +84,11 @@ def _resolve_docker_method (cliHandle, attrNames):
 
 # ------------------------------------------------
 
-def get_first_eligible_input ( callback , input_colln, task_id, sort_key_func = None):
+def get_first_eligible_input ( callback , input_colln, task_id, sort_key_func = None ):
 
     METADATA_TAG = Metadata_Tag
 
-    # Ttart with a set of all data objects in the input collection
+    # Start with a set of all data objects in the input collection
     # subtract from the set all objects with nonzero task id's set in iRODS metadata
 
     eligible_inputs = set(
@@ -116,6 +116,10 @@ def get_first_eligible_input ( callback , input_colln, task_id, sort_key_func = 
         meta_stamp(callback, chosen_input, task_id)
 
     return chosen_input
+
+def split_on_zone_name ( s ):
+    elem = s.split("/")
+    return elem[0],"/".join(elem[1:])
 
 
 def container_dispatch(rule_args, callback, rei):
@@ -165,12 +169,20 @@ def container_dispatch(rule_args, callback, rei):
         if not user_has_access( callback, rei, client_user, "own", collection_path = dst_colln):
             logger("Calling user must have owner access on destination collection"); return
 
-        this_input = get_first_eligible_input (callback, src_colln, task_id)
+        this_input = get_first_eligible_input (callback, src_colln, task_id )
+        (_ , this_input_minus_zone_name ) = split_on_zone_name ( this_input ) 
+        (_ , this_input_basename ) = split_irods_path( this_input ) 
+
+        # Midnight thurs : container complaining about /inputs/input.dat
+        #  ... should be /inputs/home/alice/notebook_input/input.dat
+        #      [ vault_paths["input"] and "rel_path"
+
 
         env =  config['container']['environment']
 
         if this_input: 
-            env['INPUT_FILE_BASENAME'] = this_input
+            env['INPUT_FILE_RELPATH']  = this_input_minus_zone_name
+            env['INPUT_FILE_BASENAME'] = this_input_basename
 
             env_for_docker = {}
             for key,value in env.items():
@@ -187,14 +199,19 @@ def container_dispatch(rule_args, callback, rei):
         else:
             vault_paths = {}
 
+# input_leading_path = '/tmp/irods/dsp_resc' ; rel_path = 'home/alice/notebook_input/input.dat'
+# output_leading_path = '/tmp/irods/dsp_resc' ; rel_path = 'home/alice/notebook_output/.27d13e90-93d2-11e9-b3a3-12026eedf186'
+
             input_vault_info = {}
             input_leading_path = data_object_physical_path_in_vault( callback, this_input, resc_for_data, '1', input_vault_info)
             if input_leading_path :
                 rel_path = input_vault_info.get("vault_relative_path")
-                if rel_path : vault_paths['input'] = "/".join((config["internal"]["src_directory"],rel_path))
+                if rel_path : vault_paths['input'] = "/".join((config["internal"]["src_directory"],os.path.dirname(rel_path)))
+                logger( "input mapping : input_leading_path {!r} rel_path {!r} " .format( input_leading_path, rel_path))
 
-            logger("input_leading_path = " + input_leading_path )
-            logger("this_input = " + this_input)
+            serverLogger = make_logger (callback, "serverLog")
+            serverLogger("input_leading_path = {!r} ; rel_path = {!r}" .format (input_leading_path ,rel_path) )
+            #logger("this_input = " + this_input)
 
             output_locator = dst_colln + "/." + task_id
 
@@ -202,9 +219,10 @@ def container_dispatch(rule_args, callback, rei):
             output_leading_path = data_object_physical_path_in_vault( callback, output_locator, resc_for_data, '1', output_vault_info)
             if output_leading_path:
                 rel_path = output_vault_info.get("vault_relative_path")
-                if rel_path : vault_paths['output'] = "/".join((config["internal"]["dst_directory"],rel_path))
+                if rel_path : vault_paths['output'] = "/".join((config["internal"]["dst_directory"],os.path.dirname(rel_path)))
 
-            logger("output_leading_path = {!r} ; rel_path = {!r}" .format (output_leading_path ,rel_path) )
+            serverLogger("vault_paths['input'] : "+vault_paths['input'])
+            serverLogger("vault_paths['output'] : "+vault_paths['output'])
 
             if vault_paths:
                 docker_opts [ 'volumes' ]  = {}
@@ -217,10 +235,10 @@ def container_dispatch(rule_args, callback, rei):
  
             # prepare target output directory
             task_output_colln = dst_colln + "/" + task_id
-            callback.msiCollCreate (task_output_colln, "1", "0")
+            callback.msiCollCreate (task_output_colln, "1", 0)
 
             # run the container
-            docker_method( docker_cmd, *docker_args, **docker_opts )
+            docker_method( config['container']['image'], config['container']['command'], **docker_opts)
 
             # register the products
             callback.msiregister_as_admin ( task_output_colln, resc_for_data,  vault_paths['output'], "collection", "0")
