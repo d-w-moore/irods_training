@@ -1,9 +1,11 @@
 
 import os, json, uuid
+from pprint import pformat
 from genquery import AS_LIST, AS_DICT, row_iterator
 import irods_types
 import warnings
 from textwrap import dedent as _dedent
+
 
 from bytes_unicode_mapper import( map_strings_recursively as _map_strings_recursively,
                                   to_bytes as _to_bytes,
@@ -161,7 +163,7 @@ def container_dispatch(rule_args, callback, rei):
         client_user = get_user_name (callback, rei)
 
         src_colln = config["external"]["src_collection"]
-        logger ("src_colln= "+src_colln) # dwm
+        logger ("src_colln= "+src_colln)
         if not user_has_access( callback, rei, client_user, "write", collection_path = src_colln):
             logger("Calling user must have write access on source"); return
 
@@ -173,24 +175,14 @@ def container_dispatch(rule_args, callback, rei):
         (_ , this_input_minus_zone_name ) = split_on_zone_name ( this_input ) 
         (_ , this_input_basename ) = split_irods_path( this_input ) 
 
-        # Midnight thurs : container complaining about /inputs/input.dat
-        #  ... should be /inputs/home/alice/notebook_input/input.dat
-        #      [ vault_paths["input"] and "rel_path"
-
-
         env =  config['container']['environment']
 
         if this_input: 
-            env['INPUT_FILE_RELPATH']  = this_input_minus_zone_name
             env['INPUT_FILE_BASENAME'] = this_input_basename
-
-            env_for_docker = {}
-            for key,value in env.items():
-                if value.find('%(') >= 0:
-                    env_for_docker[ key ] = value % env 
-                else:
-                    env_for_docker[ key ] = value
-            docker_opts['environment'] = env_for_docker
+            docker_opts['environment'] = {
+                key : value % env if value.find('%(') >= 0 else value
+                for key,value in env.items()
+            }
 
         # get vault paths
 
@@ -205,31 +197,31 @@ def container_dispatch(rule_args, callback, rei):
             input_vault_info = {}
             input_leading_path = data_object_physical_path_in_vault( callback, this_input, resc_for_data, '1', input_vault_info)
             if input_leading_path :
-                rel_path = input_vault_info.get("vault_relative_path")
-                if rel_path : vault_paths['input'] = "/".join((config["internal"]["src_directory"],os.path.dirname(rel_path)))
-                logger( "input mapping : input_leading_path {!r} rel_path {!r} " .format( input_leading_path, rel_path))
+                inp_rel_path = input_vault_info.get("vault_relative_path")
+                if inp_rel_path : vault_paths['input'] = "/".join((config["internal"]["src_directory"],os.path.dirname(inp_rel_path)))
+                logger( "input mapping : input_leading_path {!r} inp_rel_path {!r} " .format( input_leading_path, inp_rel_path))
 
             serverLogger = make_logger (callback, "serverLog")
-            serverLogger("input_leading_path = {!r} ; rel_path = {!r}" .format (input_leading_path ,rel_path) )
-            #logger("this_input = " + this_input)
+            serverLogger("input_leading_path = {!r} ; inp_rel_path = {!r}" .format (input_leading_path ,inp_rel_path) )
 
             output_locator = dst_colln + "/." + task_id
 
             output_vault_info = {}
             output_leading_path = data_object_physical_path_in_vault( callback, output_locator, resc_for_data, '1', output_vault_info)
             if output_leading_path:
-                rel_path = output_vault_info.get("vault_relative_path")
-                if rel_path : vault_paths['output'] = "/".join((config["internal"]["dst_directory"],os.path.dirname(rel_path)))
-
-            serverLogger("vault_paths['input'] : "+vault_paths['input'])
-            serverLogger("vault_paths['output'] : "+vault_paths['output'])
+                out_rel_path = output_vault_info.get("vault_relative_path")
+                if out_rel_path : vault_paths['output'] = "/".join((config["internal"]["dst_directory"],os.path.dirname(out_rel_path)))
 
             if vault_paths:
-                docker_opts [ 'volumes' ]  = {}
+                docker_opts [ 'volumes' ]  = []
                 if vault_paths.get('input'):
-                    docker_opts ['volumes'][input_leading_path] = { 'bind': os.path.dirname(vault_paths['input']), 'mode': 'ro' }
+                    docker_opts ['volumes'] .append( "{}:{}:ro".format (input_leading_path + "/" + os.path.dirname(inp_rel_path),
+                                                     config["internal"]["src_directory"]))
                 if vault_paths.get ('output'):
-                    docker_opts ['volumes'][output_leading_path] = { 'bind': os.path.dirname(vault_paths['output']), 'mode': 'rw' }
+                    docker_opts ['volumes'] .append( "{}:{}:rw".format (output_leading_path + "/" + os.path.dirname(out_rel_path),
+                                                     config["internal"]["dst_directory"]))
+            #logger( "" +  pformat (docker_opts))
+            #return # dwm
 
             docker_method = _resolve_docker_method (docker.from_env(), docker_cmd  )
  
@@ -238,12 +230,11 @@ def container_dispatch(rule_args, callback, rei):
             callback.msiCollCreate (task_output_colln, "1", 0)
 
             # run the container
-            docker_method( config['container']['image'], config['container']['command'], **docker_opts)
+            docker_method( config['container']['image'],
+                           config['container']['command'], remove=True, **docker_opts)
 
             # register the products
             callback.msiregister_as_admin ( task_output_colln, resc_for_data,  vault_paths['output'], "collection", "0")
-
-#*xx=msiregister_as_admin(*logPath,*rescN,*phyPath,*type,*yy)
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # def _delayed_container_launch(rule_args, callback, rei):
