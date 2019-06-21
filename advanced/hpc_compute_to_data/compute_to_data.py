@@ -167,10 +167,20 @@ def container_dispatch(rule_args, callback, rei):
 
         this_input = get_first_eligible_input (callback, src_colln, task_id)
 
+        env = docker_opts['environment'] = config['container']['environment']
+
+        if this_input: 
+            env['INPUT_FILE_BASENAME'] = this_input
+          
+        for key,value in env:
+            if value.find('%(') >= 0:
+                env[ key ] = value % env 
+
       # get vault paths
 
-        if this_input:
-
+        if not this_input:
+            logger("no input found")
+        else:
             vault_paths = {}
 
             input_vault_info = {}
@@ -179,9 +189,8 @@ def container_dispatch(rule_args, callback, rei):
                 rel_path = input_vault_info.get("vault_relative_path")
                 if rel_path : vault_paths['input'] = "/".join((config["internal"]["src_directory"],rel_path))
 
-            pr = make_logger(callback,'stdout') 
-            pr("input_leading_path = " + input_leading_path )
-            pr("this_input = " + this_input)
+            logger("input_leading_path = " + input_leading_path )
+            logger("this_input = " + this_input)
 
             output_locator = dst_colln + "/." + task_id
 
@@ -191,7 +200,7 @@ def container_dispatch(rule_args, callback, rei):
                 rel_path = output_vault_info.get("vault_relative_path")
                 if rel_path : vault_paths['output'] = "/".join((config["internal"]["dst_directory"],rel_path))
 
-            pr("output_leading_path = {!r} ; rel_path = {!r}" .format (output_leading_path ,rel_path) )
+            logger("output_leading_path = {!r} ; rel_path = {!r}" .format (output_leading_path ,rel_path) )
 
             if vault_paths:
                 docker_opts [ 'volumes' ]  = {}
@@ -200,12 +209,19 @@ def container_dispatch(rule_args, callback, rei):
                 if vault_paths.get ('output'):
                     docker_opts ['volumes'][output_leading_path] = { 'bind': os.dirname(vault_paths['output']), 'mode': 'rw' }
 
-            pr (docker_opts)
+            docker_method = _resolve_docker_method (docker.from_env(), docker_cmd  )
+ 
+            # prepare target output directory
+            task_output_dir = output_leading_path + "/" + task_id
+            callback.msiCollCreate (task_output_dir, "1", "0")
 
-#   docker_method = _resolve_docker_method (docker.from_env(), docker_cmd  )
-#
-#   docker_method (docker_cmd, *docker_args, **docker_opts)
+            # run the container
+            docker_method( docker_cmd, *docker_args, **docker_opts )
 
+            # register the products
+            callback.msiregister_as_admin ( output_leading_path, resc_for_data,  vault_paths['output'], "collection", "0")
+
+#*xx=msiregister_as_admin(*logPath,*rescN,*phyPath,*type,*yy)
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # def _delayed_container_launch(rule_args, callback, rei):
