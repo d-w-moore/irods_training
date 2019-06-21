@@ -1,5 +1,5 @@
 
-import json, uuid
+import os, json, uuid
 from genquery import AS_LIST, AS_DICT, row_iterator
 import irods_types
 import warnings
@@ -167,16 +167,20 @@ def container_dispatch(rule_args, callback, rei):
 
         this_input = get_first_eligible_input (callback, src_colln, task_id)
 
-        env = docker_opts['environment'] = config['container']['environment']
+        env =  config['container']['environment']
 
         if this_input: 
             env['INPUT_FILE_BASENAME'] = this_input
-          
-        for key,value in env:
-            if value.find('%(') >= 0:
-                env[ key ] = value % env 
 
-      # get vault paths
+            env_for_docker = {}
+            for key,value in env.items():
+                if value.find('%(') >= 0:
+                    env_for_docker[ key ] = value % env 
+                else:
+                    env_for_docker[ key ] = value
+            docker_opts['environment'] = env_for_docker
+
+        # get vault paths
 
         if not this_input:
             logger("no input found")
@@ -205,21 +209,21 @@ def container_dispatch(rule_args, callback, rei):
             if vault_paths:
                 docker_opts [ 'volumes' ]  = {}
                 if vault_paths.get('input'):
-                    docker_opts ['volumes'][input_leading_path] = { 'bind': os.dirname(vault_paths['input']), 'mode': 'ro' }
+                    docker_opts ['volumes'][input_leading_path] = { 'bind': os.path.dirname(vault_paths['input']), 'mode': 'ro' }
                 if vault_paths.get ('output'):
-                    docker_opts ['volumes'][output_leading_path] = { 'bind': os.dirname(vault_paths['output']), 'mode': 'rw' }
+                    docker_opts ['volumes'][output_leading_path] = { 'bind': os.path.dirname(vault_paths['output']), 'mode': 'rw' }
 
             docker_method = _resolve_docker_method (docker.from_env(), docker_cmd  )
  
             # prepare target output directory
-            task_output_dir = output_leading_path + "/" + task_id
-            callback.msiCollCreate (task_output_dir, "1", "0")
+            task_output_colln = dst_colln + "/" + task_id
+            callback.msiCollCreate (task_output_colln, "1", "0")
 
             # run the container
             docker_method( docker_cmd, *docker_args, **docker_opts )
 
             # register the products
-            callback.msiregister_as_admin ( output_leading_path, resc_for_data,  vault_paths['output'], "collection", "0")
+            callback.msiregister_as_admin ( task_output_colln, resc_for_data,  vault_paths['output'], "collection", "0")
 
 #*xx=msiregister_as_admin(*logPath,*rescN,*phyPath,*type,*yy)
 
