@@ -5,11 +5,14 @@ if [ -r $FUNCTIONS ]; then
   . $FUNCTIONS
 
 UUID=$(
-  create_irods_slurm_desc -v  # -- create time-based UUID for this job
+  create_irods_slurm_desc -v
 )
 
-#   -- debug --
-[ -n "$UUID" ] && { # echo >>"/tmp/$UUID" # - suppresses epilog deletion of UUID
-  echo $0  `date` "$UUID" >>/tmp/prolog ; }
+##-- dwm -- debug: # set_irods_slurm_var "hello" "1"
+
+#  -- Log the launch of this Slurm job --
+
+[ -n "$UUID" ] && {
+  echo $0 $MUTX `date` "$UUID" >>/tmp/prolog ; }
 
 fi # -r $FUNCTIONS

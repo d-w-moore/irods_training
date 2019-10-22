@@ -4,17 +4,7 @@ project(irods_hpc_data_to_compute_example C CXX)
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/data_to_compute.re
-  ${CMAKE_SOURCE_DIR}/core.py.data_to_compute
-  DESTINATION etc/irods
-  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
-  )
-
-install(
-  FILES
   ${CMAKE_SOURCE_DIR}/spawn_remote_slurm_jobs.r
-  ${CMAKE_SOURCE_DIR}/rescName_from_kvpair.r
-  ${CMAKE_SOURCE_DIR}/detect_thumbnails.py
   DESTINATION ${IRODS_HOME_DIRECTORY}
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )
@@ -23,7 +13,6 @@ install(
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/compute/common.py
-  ${CMAKE_SOURCE_DIR}/compute/util.py
   ${CMAKE_SOURCE_DIR}/compute/job_params.json
   ${CMAKE_SOURCE_DIR}/compute/__init__.py
   ${CMAKE_SOURCE_DIR}/compute/irods_compute_functions
@@ -33,14 +22,7 @@ install(
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/compute/admin_as_rodsuser.json
-  DESTINATION ${IRODS_HOME_DIRECTORY}/compute
-  PERMISSIONS OWNER_READ OWNER_WRITE
-  )
-
-install(
-  FILES
-  ${CMAKE_SOURCE_DIR}/submit_thumbnail_job.sh
+  ${CMAKE_SOURCE_DIR}/submit_thumbnail_jobs.py
   ${CMAKE_SOURCE_DIR}/convert.SLURM
   DESTINATION ${IRODS_HOME_DIRECTORY}/msiExecCmd_bin
   PERMISSIONS OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE

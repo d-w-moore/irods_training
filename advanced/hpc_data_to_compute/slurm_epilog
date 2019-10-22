@@ -4,33 +4,67 @@ FUNCTIONS=/var/lib/irods/compute/irods_compute_functions
 if [ -r $FUNCTIONS ]; then
 . $FUNCTIONS
 
-## ////////////////////////////////
-##
-## BEGIN_SECTION -- data to compute 
+function evaluate_template {
+    PYTHONPATH=$HOME/compute python -c "import common; \
+    print(common.jobParamsPlusMetadata()('$1'))"
+}
 
-thumbnail_size=$(get_irods_slurm_var "size_string")
-if [ $? -eq 0 ] ; then
-    python /var/lib/irods/compute/common.py reg_repl_trim_output "$thumbnail_size"
+function register_and_make_subcollection {
+    local result=$( PYTHONPATH=$HOME/compute python -c "import common ;\
+                    common.register_on_resource('$1', '$2', '$3', verbose_result = True)" )
+    test "$result" -eq 1 >/dev/null 2>&1
+}
+
+function replicate_to_resource  {
+    PYTHONPATH=$HOME/compute python -c "import common, sys ;\
+    sys.exit(0 if common.replicate_to_resource('$1','$2') else 1 )"
+}
+
+function trim_data_object_from_resc {
+    PYTHONPATH=$HOME/compute python -c "import common;\
+    common.trim_replicas_from_resource('$1', '$2')"
+}
+
+if job_type=$(get_irods_slurm_var "compute_job_type") ; then
+    case "$job_type" in 
+        generate_thumbnails)
+            phys_dir=$(get_irods_slurm_var "physical_output_dir")
+            obj_name=$(get_irods_slurm_var "output_object_name")
+            output_dataobject_path=`evaluate_template THUMBNAIL_OUTPUT_DATAOBJECT_FULLPATH`
+            if resource_use_key=$(get_irods_slurm_var "resource_use_key") &&\
+                   scratch_resc=$(get_irods_slurm_var "scratch_resource_name")
+            then
+                Remain=$(PYTHONPATH="$HOME/compute" \
+                    python -c "from __future__ import print_function; import common; print(
+                    common.rm_usage_and_count_remaining('$resource_use_key', '$scratch_resc'))"
+                )
+                test "$Remain" -eq 0 >/dev/null 2>&1 &&\
+                 trim_data_object_from_resc "$(get_irods_slurm_var input_data_object)" "$scratch_resc"
+            fi
+            long_term_storage_resc=`evaluate_template LONG_TERM_STORAGE_RESC`
+            register_and_make_subcollection "$phys_dir/$obj_name" "$output_dataobject_path" "$scratch_resc" &&\
+            replicate_to_resource "$output_dataobject_path" "$long_term_storage_resc"  &&\
+            trim_data_object_from_resc "$output_dataobject_path" "$scratch_resc"  && {
+                echo " ************" 
+                echo " *    YY    *" 
+                echo " ************"
+            } >>/tmp/epilog
+        ;;
+
+        *) echo >> /tmp/epilog "unrecognized compute job type : '$job_type'" ;; 
+    esac
+else
+    echo >> /tmp/epilog "'compute_job_type' not set"
 fi
-
-## BEGIN_SECTION -- compute to data --
-
-# post_processing_options=$(get_irods_slurm_var "post_processing")
-# if [ $? -eq 0 ] ; then
-#   CMD="/var/lib/irods/msiExecCmd_bin/wrap_singularity exec metadata_addtags"
-#   CMD+=" $post_processing_options "
-#   STATUS="" ; $CMD ; STATUS="$?"
-#   { echo "$(date) - status=($STATUS) after post-processing with:"
-#     echo " '$CMD'" ; } >>/tmp/epilog
-# fi
 
 UUID=$(get_irods_slurm_var uuid) 
 
 destroy_irods_slurm_desc
 
-#   -- debug --
+#  -- Log completion of this Slurm job --
+
 if [ -n "$UUID" ] ; then 
-  echo $0  `date` $UUID >>/tmp/epilog 
+  echo $0 $MUTX `date` $UUID >>/tmp/epilog 
 fi
 
 fi # -r $FUNCTIONS

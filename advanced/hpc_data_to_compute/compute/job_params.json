@@ -1,14 +1,22 @@
 {
-  "input_path": "/tempZone/home/rods/stickers.jpg",
-  "imageCompute_resc": ["COMPUTE_RESOURCE_ROLE","IMAGE_PROCESSING"],
-  "longTermStoreCompute_resc": ["COMPUTE_RESOURCE_ROLE","LONG_TERM_STORAGE"],
-  "use_checksums" : true,
-  "phys_dir_for_output": "/tmp/irods/thumbnails",
-  "output_collection" : "/tempZone/home/rods/stickers_thumbnails",
-  "thumbnail_sizes" : [ "128x128", 
-                        "512x512",
-                        "256x256",
-                        "1024x1024"
-                      ],
-  "thumbnail_filename": "stickers_thumbnail_%s.jpg"
+    "imageCompute_resc":
+      [
+        "COMPUTE_RESOURCE_ROLE", "IMAGE_PROCESSING"
+      ],
+    "longTermStoreCompute_resc":
+      [
+        "COMPUTE_RESOURCE_ROLE", "LONG_TERM_STORAGE"
+      ],
+    "thumbnail_convert_script" :
+      "/var/lib/irods/msiExecCmd_bin/convert.SLURM",
+    "thumbnail_size_list":
+      [
+        "128x128", "256x256", "512x512", "1024x1024"
+      ],
+    "relative_path_for_output" : "thumbnails",
+    ".BB" : "[{uuid}]",
+    ".THUMBNAIL_OUTPUT_COLLECTION" : 
+      "{input_image_collection}/{relative_path_for_output}",
+    ".THUMBNAIL_OUTPUT_DATAOBJECT":
+      "{input_image_name}_{thumbnail_size}.{input_image_extension}"
 }
