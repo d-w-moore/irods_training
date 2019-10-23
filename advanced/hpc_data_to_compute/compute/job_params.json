@@ -18,5 +18,5 @@
     ".THUMBNAIL_OUTPUT_COLLECTION" : 
       "{input_image_collection}/{relative_path_for_output}",
     ".THUMBNAIL_OUTPUT_DATAOBJECT":
-      "{input_image_name}_{thumbnail_size}.{input_image_extension}"
+      "{input_image_name}_thumbnail_{thumbnail_size}.{input_image_extension}"
 }
