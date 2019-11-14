@@ -12,6 +12,7 @@ install(
 
 install(
   FILES
+  ${CMAKE_SOURCE_DIR}/compute/slurmcoll.bash
   ${CMAKE_SOURCE_DIR}/compute/common.py
   ${CMAKE_SOURCE_DIR}/compute/job_params.json
   ${CMAKE_SOURCE_DIR}/compute/__init__.py
