@@ -1,6 +1,9 @@
-MUTX=$(icd;ipwd 2>/dev/null)
-if [[ $MUTX/ = /?*/home/?*/ && "${SLURM_JOB_ID}" ]]; then
-    MUTX="$MUTX/${SLURM_CLUSTER_NAME}_slurmjob_${SLURM_JOB_ID}.txt"
+# Source only from Bash
+
+. "$(dirname "${BASH_SOURCE}")/slurmcoll.bash"
+MUTX_DIR=${SLURM_COLLECTION}
+if [[ "$MUTX_DIR"/ = /?*/ && "${SLURM_JOB_ID}" = ?* ]]; then
+    MUTX="$MUTX_DIR/${SLURM_CLUSTER_NAME}_slurmjob_${SLURM_JOB_ID}.txt"
 else
     MUTX=""
 fi
@@ -9,7 +12,7 @@ fi
 #
 # - create/ test/ destroy job descriptor (an iRODS data object with the name
 #     contained in the "$MUTX" variable above, valid as long as not in iRODS trash
-# 
+#
 #--- ( CREATE ) : form : [ -v(erbose) ]  [uuid]
 # -     uuid is generated based on time / host info if not given.
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -30,7 +33,7 @@ create_irods_slurm_desc ()
   [ -n "$MUTX" ] && touch "/tmp/$M" && \
   [ -n "$UUID" ] && echo "$UUID" >"/tmp/$M"
 
-  if iput "/tmp/$M" >/dev/null 2>&1 
+  if iput "/tmp/$M" "$MUTX" >/dev/null 2>&1
   then
     imeta set -d "$MUTX" uuid $UUID # help tracking of SLURM job through
     status=$?                       # submit, prolog, epilog
@@ -45,7 +48,7 @@ create_irods_slurm_desc ()
 
 #--- ( TEST )
 
-test_irods_slurm_desc () 
+test_irods_slurm_desc ()
 {
  local result=""
  local UUID=${1:-$(get_irods_slurm_var uuid)}
@@ -56,14 +59,14 @@ test_irods_slurm_desc ()
 
 #--- ( DESTROY )
 
-destroy_irods_slurm_desc () 
+destroy_irods_slurm_desc ()
 {
-  local M=$(basename "$MUTX")
-  if [ -n "$M" ];  then
-    local UUID=$(get_irods_slurm_var uuid)
-    irm -fr "$MUTX"
-    rm -f /tmp/$(basename "$MUTX")
-  fi
+    local M=$(basename "$MUTX")
+    if [ -n "$M" ];  then
+        local UUID=$(get_irods_slurm_var uuid)
+        irm -fr "$MUTX"
+        rm -f "/tmp/$M"
+    fi
 }
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -77,7 +80,7 @@ get_irods_slurm_desc ()
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-#    get and set through metadata attached to the $MUTX job descriptor 
+#    get and set through metadata attached to the $MUTX job descriptor
 #    ( an iRODS data object )
 
 set_irods_slurm_var ()

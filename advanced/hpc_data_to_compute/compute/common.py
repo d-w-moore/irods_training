@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # --
-# -  Utility module. Common Python routines for iRODS Data-To-Compute 
+# -  Utility module. Common Python routines for iRODS Data-To-Compute
 # --
 
 from __future__ import print_function
@@ -75,7 +75,7 @@ def rm_usage_and_count_remaining(dataObjectToken,rescname):
      Like(ResourceMeta.value, dataobj_path + '--' + token ))
 
     return len(usage_query.all())
-    
+
 def add_usage(data_obj_path, rescname):
     sess = session_object()
     dobj = None
@@ -97,6 +97,18 @@ def rescName_from_role_KVP ( kvp ):
               ResourceMeta.value == kvp[1] )
     return q.one()[Resource.name]
 
+def iRODS_slurm_mutx_dir():
+    from subprocess import PIPE,Popen
+    dir=dict(os.environ,DIR="/var/lib/irods/compute")
+    SLURM_Coll = os.environ.get("SLURM_COLLECTION","")
+    if not SLURM_Coll:
+        SLURM_Coll = Popen(
+                         ["bash","-c","source $DIR/slurmcoll.bash >/dev/null; slurm_collection"],
+                         stdout=PIPE, stderr=PIPE, env=dir
+                     ).communicate()[0].rstrip()
+        os.environ[ "SLURM_COLLECTION"] = SLURM_Coll
+    return SLURM_Coll
+
 def get_iRODS_home():
 
     session = session_object()
@@ -108,14 +120,17 @@ def set_job_meta(key,val,units=""):
     obj = session_object().data_objects.get(mdpath)
     obj.metadata[key] = iRODSMeta(key,val,units)
 
+
 #-----------------------------------------------------------
+
 def slurm_job_descriptor_path():
     try:
-        return get_iRODS_home( )  + "/" + os.environ['SLURM_CLUSTER_NAME'] + '_slurmjob_' + \
-                                          os.environ['SLURM_JOB_ID'] + '.txt'
+        return iRODS_slurm_mutx_dir()  + "/" + os.environ['SLURM_CLUSTER_NAME'] + '_slurmjob_' + \
+                                               os.environ['SLURM_JOB_ID'] + '.txt'
     except:
         return None
 
+#-----------------------------------------------------------
 
 job_params = {}
 logger = None
@@ -134,7 +149,7 @@ def computeLogger(use_dummy=False):
     if not logger:
         try:
             log_filename =  '/tmp/log_irods_compute.txt' ;
-            if not use_dummy :
+            if not use_dummy:
                 logger = logging.getLogger('compute_logger')
                 logger.setLevel(logging.DEBUG)
                 ch = logging.handlers.WatchedFileHandler(filename=log_filename)
@@ -160,7 +175,7 @@ class MetadataDictFormattable( dict ):
         template = templateString if '{' in templateString else \
             getattr(self, templateString, None)
         if template is None: return error_output
-        else: 
+        else:
             return template.format(**self)
 
     def refresh_job_metadata (self, overwrite_keys=True, overwrite_attrs=True ):
@@ -190,7 +205,7 @@ class MyDictFormattable( MetadataDictFormattable ):
 # def CC(self): return self.AA + "..." + self.BB
 
     @property
-    def LONG_TERM_STORAGE_RESC (self): 
+    def LONG_TERM_STORAGE_RESC (self):
         return rescName_from_role_KVP( self ["longTermStoreCompute_resc"] )
 
     @property
@@ -221,7 +236,7 @@ def jobParams( cfgFile = 'job_params.json' , argv0 = '' ):
         try:
             job_params = json.load( open( cfgFile, 'r') )
         except:
-            msg =  "Could not load JSON config file at {}".format (cfgFile) 
+            msg =  "Could not load JSON config file at {}".format (cfgFile)
             computeLogger().error(msg); raise SystemExit(msg)
     return job_params
 
@@ -246,7 +261,7 @@ def session_object(  ):
       env_file = os.path.expanduser('~/.irods/irods_environment.json')
     session = iRODSSession(irods_env_file = env_file )
     atexit.register(_clear_session)
-  
+
   return session
 
 
@@ -264,14 +279,14 @@ def trim_replicas_from_resource ( obj,          # can be data_object, or a full 
 
 def _object_path_by_resource( datobj, resourceName ):
     if not datobj: return None
-    repls_on_resc = [ repl for repl in datobj.replicas 
+    repls_on_resc = [ repl for repl in datobj.replicas
                      if repl.resource_name == resourceName ]
     if repls_on_resc: return repls_on_resc[0].path
     else:             return None
 
 def _exists_on_resource (dObj, resourceName , test_status = True ):
     _filter = lambda x : x
-    if test_status : 
+    if test_status:
         _filter = lambda x : x.status == '1'
     lst = [ r for r in dObj.replicas if r.resource_name == resourceName and _filter(r) ]
     return len(lst) > 0
@@ -306,7 +321,7 @@ def register_on_resource( absolute_file_path, full_object_path , resc_name , ver
     if verbose_result: print(retval)
     return retval
 
-def replicate_to_resource ( obj, resourceName, **options ): 
+def replicate_to_resource ( obj, resourceName, **options ):
     sess = session_object()
     datobj = None
     try:
