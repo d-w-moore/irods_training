@@ -1,0 +1,14 @@
+{
+    "guest_working_dir" : "/home/irods",
+    "guest_input_subdir" : "input",
+    "guest_output_subdir" : "output",
+    "ports" : { "8080/tcp": "8080" },
+    "detach": true,
+    "environment": { "NOTEBOOK_PORT" : "8080",
+                     "INPUT_DIR" : "input",
+                     "OUTPUT_DIR" : "output",
+                     "DEGREES_ROTATION": "25",
+                     "PLOTTING": "True"
+    },
+    "image": "jupyter_sobel:latest"
+}

@@ -4,8 +4,9 @@ project(irods_hpc_compute_to_data_example C CXX)
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/compute_to_data.py
-  ${CMAKE_SOURCE_DIR}/compute_to_data_support.py
+  ${CMAKE_SOURCE_DIR}/container_calls.re
+  ${CMAKE_SOURCE_DIR}/compute_to_data_routing.re
+  ${CMAKE_SOURCE_DIR}/compute_container.py
   ${CMAKE_SOURCE_DIR}/bytes_unicode_mapper.py
   DESTINATION etc/irods
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
@@ -13,8 +14,15 @@ install(
 
 install(
   FILES
-  ${CMAKE_SOURCE_DIR}/task_config.json
-  ${CMAKE_SOURCE_DIR}/spawn_remote_containers.r
+  ${CMAKE_SOURCE_DIR}/sobel_notebook.json
+  ${CMAKE_SOURCE_DIR}/sobel_execute.json
+  DESTINATION var/lib/irods
+  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+  )
+
+install(
+  FILES
+  ${CMAKE_SOURCE_DIR}/launch_container_for_input.r
   DESTINATION home/ubuntu
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )

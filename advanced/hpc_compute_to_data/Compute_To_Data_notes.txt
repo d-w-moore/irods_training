@@ -1,0 +1,99 @@
+
+Setup is similar as described at slides in UGM2019 more-or-less: (point (4) below is an exception,
+as I renamed the resource used for compute):
+
+    http://slides.com/irods/ugm2019-administration-compute-to-data#/10
+
+Additionally do the following --
+
+  1. untar the included file compute_to_data_2020_01.tar under the ubuntu home directory
+     and (w/ sudo) move the files to the appropriate places as indicated in the file hierarchy:
+     Something like this will do it:
+
+        ubuntu $ mkdir /home/ubuntu/jupyter_container
+	ubuntu $ mkdir c2dTmp ; cd c2dTmp && sudo tar xvvf ~/compute_to_data_2020_01.tar
+        ubuntu $ sudo su -c "find home/ubuntu var/lib/irods etc/irods -type f -exec cp -ip {} /{} \;"
+
+  2. set the native rulebases in the server_config to:
+                    "re_rulebase_set": [
+                        "compute_to_data_routing",
+                        "container_calls",
+                        "core"
+                    ], 
+                      
+  3. add the line 'from compute_container import *' to /etc/irods/core.py. (This is all that is needed
+     in terms of Python rule engine code.)
+
+  4. Instead of the storage resources/AVUs in the UGM2019 presentation, we create the following
+     setup for the data to be routed "compute-side" :
+
+     irods $  mkdir /tmp/irods_compute
+     irods $  iadmin mkresc compute_resc unixfilesystem `hostname`:/tmp/irods_compute
+     irods $  imeta set -R compute_resc irods::resc_compute_role image_processing
+
+  5. Create the .json data objects describing C2d applications settings --
+
+     irods $  imkdir  /tempZone/home/configured_applications
+     irods $  ichmod read public /tempZone/home/configured_applications
+     irods $  ichmod inherit /tempZone/home/configured_applications
+     irods $  icd /tempZone/home/configured_applications ; cd ; for x in sobel*.json; do iput -f $x . ;done
+     irods $  imeta set -d sobel_execute.json   irods::compute::application  sobel_auto_run  docker
+     irods $  imeta set -d sobel_notebook.json  irods::compute::application  sobel_jupyter_nb  docker
+
+#-------------------------------------------------------------------------------------------------------
+#                                      RUNNING THE TRAINING DEMO:
+#-------------------------------------------------------------------------------------------------------
+
+	ubuntu $ ./generate_csv_input.py >a.img.csv
+	ubuntu $ icd; imkdir input_data
+	ubuntu $ iput a.img.csv  input_data
+
+To show that data object "a.img.csv" has landed in the correct storage resource:
+
+	ubuntu $ ils -l input_data
+
+To launch the notebook (show-and-tell) container:
+
+	ubuntu $ irule -F launch_container_for_input.r  
+
+                 << Hit Return Twice for defaults >>
+
+                 After 5 seconds , URL should print out for where to view the Jupyter notebook.
+                 "0.0.0.0" will be part of the URL, but in practice should/may  be replaced with
+                 the compute server hostname.
+
+To launch the synchronously executing, "process-input-to-output-and-exit", container:
+
+	ubuntu $ irule -F launch_container_for_input.r \
+                   '*outcoll="/tempZone/home/alice/output_exe"' \
+                   '*app="*/sobel_execute.json"' '*wait_secs=0'
+
+#===========================================================================================
+
+If a VM security (or something else that is running) conflicts with the default http port (8080)
+used to display the  notebook, choose a new port number and then: 
+
+(optionally):
+
+    * change 8080 to the new port number in Dockerfile.jupyter_sobel and rebuild the docker image
+      'jupyter_sobel:latest'
+
+(but definitely):
+
+    * change 8080 in the sobel_notebook.json app configuration file and iput -f the modified file into 
+      the collection '/tempZone/home/configured_applications'
+
+#------------------
+
+Notes --
+
+If by trial and repetition more than one docker app is using the same notebook display port (or the same output
+collection) as a new app instance about to be spawned, you can do the following to get rid of the old one(s): 
+
+ $ docker rm -f $(docker ps -aql)
+
+(using  "-aql" deletes the last docker app run, using "-aq" would terminate all running docker applications).
+
+Probably need to another policy endpoint as a counterpart for for "docker <containerId> stop" but this
+isn't quite complete yet.
+
