@@ -1,37 +1,28 @@
+Setup for the January 2020 COMPUTE TO DATA Training / Demonstration
 
-Setup is similar as described at slides in UGM2019 more-or-less: (point (4) below is an exception,
-as I renamed the resource used for compute):
+Setup is similar to what is outlined at:
+  http://slides.com/irods/ugm2019-administration-compute-to-data#/10
+but with the following exceptions:
 
-    http://slides.com/irods/ugm2019-administration-compute-to-data#/10
+  1. set the native rulebases in the server_config to:
 
-Additionally do the following --
-
-  1. untar the included file compute_to_data_2020_01.tar under the ubuntu home directory
-     and (w/ sudo) move the files to the appropriate places as indicated in the file hierarchy:
-     Something like this will do it:
-
-        ubuntu $ mkdir /home/ubuntu/jupyter_container
-	ubuntu $ mkdir c2dTmp ; cd c2dTmp && sudo tar xvvf ~/compute_to_data_2020_01.tar
-        ubuntu $ sudo su -c "find home/ubuntu var/lib/irods etc/irods -type f -exec cp -ip {} /{} \;"
-
-  2. set the native rulebases in the server_config to:
                     "re_rulebase_set": [
                         "compute_to_data_routing",
                         "container_calls",
                         "core"
                     ], 
                       
-  3. add the line 'from compute_container import *' to /etc/irods/core.py. (This is all that is needed
+  2. add the line 'from compute_container import *' to /etc/irods/core.py. (This is all that is needed
      in terms of Python rule engine code.)
 
-  4. Instead of the storage resources/AVUs in the UGM2019 presentation, we create the following
+  3. Instead of the storage resources/AVUs in the UGM2019 presentation, we create the following
      setup for the data to be routed "compute-side" :
 
-     irods $  mkdir /tmp/irods_compute
-     irods $  iadmin mkresc compute_resc unixfilesystem `hostname`:/tmp/irods_compute
+     irods $  mkdir /var/lib/irods/compute_Vault
+     irods $  iadmin mkresc compute_resc unixfilesystem `hostname`:/var/lib/irods/compute_Vault
      irods $  imeta set -R compute_resc irods::resc_compute_role image_processing
 
-  5. Create the .json data objects describing C2D applications settings --
+  4. Create the .json data objects describing C2D applications settings --
 
      irods $  imkdir  /tempZone/home/configured_applications
      irods $  ichmod read public /tempZone/home/configured_applications
@@ -41,17 +32,18 @@ Additionally do the following --
      irods $  imeta set -d sobel_notebook.json  irods::compute::application  sobel_jupyter_nb  docker
 
 #-------------------------------------------------------------------------------------------------------
-#                                      RUNNING THE TRAINING DEMO:
+#                            Running the Compute To Data Demonstration
 #-------------------------------------------------------------------------------------------------------
 
-	ubuntu $ ./generate_csv_input.py >a.img.csv
+	ubuntu $ ./generate_csv_input.py >square.img.csv
 	ubuntu $ icd; imkdir input_data
-	ubuntu $ iput a.img.csv  input_data
-
+	ubuntu $ iput square.img.csv  input_data
 
 To show that data object "square.img.csv" has landed in the correct storage resource:
 
 	ubuntu $ ils -l input_data
+        /tempZone/home/alice/input_data:
+          alice             0 compute_resc         2080 2020-01-15.16:00 & square.img.csv
 
 
 To launch the "sobel_execute.json" container synchronously:
@@ -63,7 +55,7 @@ To launch the "sobel_execute.json" container synchronously:
 
 To show the resulting data object "edge_detected_square.img.csv" was registered,
 
-	ubuntu $ ils -l /tempZone/home/alice/output_synchronous
+	ubuntu $ ils /tempZone/home/alice/output_synchronous
         /tempZone/home/alice/output_synchronous:
           edge_detected_square.img.csv
           sobel_out.ipynb
@@ -75,12 +67,12 @@ To launch the "sobel_notebook.json" container interactively:
                    '*outcoll="/tempZone/home/alice/output_interactive"' \
                    '*app="*/sobel_notebook.json"'
 
-                 After 4 seconds, the URL of the interactive Jupyter notebook will appear.
+                 After a few seconds, the URL of the interactive Jupyter notebook will appear.
                  e.g. http://0.0.0.0:8080/?token=c9e736ae61059798bd37e05cef03f6b2c3fe8d6ae0bb055c
                  ("0.0.0.0" can be replaced with the docker host machine's hostname or IP)
 
 
-Open the URL in a local browser.
+Open the URL in a local browser to display the Jupyter Notebook main page.
 
 
 Show the iRODS delay queue watching for the interactive container to exit:
