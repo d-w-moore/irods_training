@@ -1,4 +1,6 @@
-Setup for the January 2020 COMPUTE TO DATA Training / Demonstration
+#-------------------------------------------------------------------------------------------------------
+#     Setup for the January 2020 COMPUTE TO DATA Training / Demonstration                       
+#-------------------------------------------------------------------------------------------------------
 
 Setup is similar to what is outlined at:
   http://slides.com/irods/ugm2019-administration-compute-to-data#/10
