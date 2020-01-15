@@ -31,7 +31,7 @@ Additionally do the following --
      irods $  iadmin mkresc compute_resc unixfilesystem `hostname`:/tmp/irods_compute
      irods $  imeta set -R compute_resc irods::resc_compute_role image_processing
 
-  5. Create the .json data objects describing C2d applications settings --
+  5. Create the .json data objects describing C2D applications settings --
 
      irods $  imkdir  /tempZone/home/configured_applications
      irods $  ichmod read public /tempZone/home/configured_applications
@@ -48,25 +48,67 @@ Additionally do the following --
 	ubuntu $ icd; imkdir input_data
 	ubuntu $ iput a.img.csv  input_data
 
-To show that data object "a.img.csv" has landed in the correct storage resource:
+
+To show that data object "square.img.csv" has landed in the correct storage resource:
 
 	ubuntu $ ils -l input_data
 
-To launch the notebook (show-and-tell) container:
 
-	ubuntu $ irule -F launch_container_for_input.r  
-
-                 << Hit Return Twice for defaults >>
-
-                 After 5 seconds , URL should print out for where to view the Jupyter notebook.
-                 "0.0.0.0" will be part of the URL, but in practice should/may  be replaced with
-                 the compute server hostname.
-
-To launch the synchronously executing, "process-input-to-output-and-exit", container:
+To launch the "sobel_execute.json" container synchronously:
 
 	ubuntu $ irule -F launch_container_for_input.r \
-                   '*outcoll="/tempZone/home/alice/output_exe"' \
-                   '*app="*/sobel_execute.json"' '*wait_secs=0'
+                   '*outcoll="/tempZone/home/alice/output_synchronous"' \
+                   '*app="*/sobel_execute.json"'
+
+
+To show the resulting data object "edge_detected_square.img.csv" was registered,
+
+	ubuntu $ ils -l /tempZone/home/alice/output_synchronous
+        /tempZone/home/alice/output_synchronous:
+          edge_detected_square.img.csv
+          sobel_out.ipynb
+
+
+To launch the "sobel_notebook.json" container interactively:
+
+	ubuntu $ irule -F launch_container_for_input.r \
+                   '*outcoll="/tempZone/home/alice/output_interactive"' \
+                   '*app="*/sobel_notebook.json"'
+
+                 After 4 seconds, the URL of the interactive Jupyter notebook will appear.
+                 e.g. http://0.0.0.0:8080/?token=c9e736ae61059798bd37e05cef03f6b2c3fe8d6ae0bb055c
+                 ("0.0.0.0" can be replaced with the docker host machine's hostname or IP)
+
+
+Open the URL in a local browser.
+
+
+Show the iRODS delay queue watching for the interactive container to exit:
+
+        ubuntu $ iqstat
+        id     name
+        10097  irods_policy_poll_application(*host, *context, *id, *attr_out, *status_out, "240")  
+
+
+Highlight the first Jupyter notebook cell and hit <shift-Return> to execute each cell in succession.
+
+
+Show the interactive results are not yet registered in iRODS:
+
+	ubuntu $ ils /tempZone/home/alice/output_interactive
+        remote addresses: 127.0.1.1 ERROR: lsUtil: srcPath /tempZone/home/alice/output_interactive does not exist or user lacks access permission
+
+
+Select the Quit button in the upper right corner of the Jupyter notebook main page. 
+This will exit the notebook and the container will exit.
+
+
+Show the interactive results are now registered in iRODS:
+
+        ubuntu $ ils /tempZone/home/alice/output_interactive
+        /tempZone/home/alice/output_interactive:
+          edge_detected_square.img.csv
+
 
 #===========================================================================================
 
