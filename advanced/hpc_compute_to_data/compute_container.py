@@ -7,6 +7,7 @@ import warnings
 import json
 from genquery import row_iterator, AS_DICT, AS_LIST
 import time
+import tempfile
 
 #---------------------- support routines, objects ----------------------------
 
@@ -156,7 +157,7 @@ def irods_container_Impl__run_application(args,callback,rei):
             args[6] = "container ID not returned when detach = True"
             if output_coll and host_v_outpath:
                 callback.msiregister_as_admin ( output_coll, ctx['compute_resource'], host_v_outpath, "collection", 0)
-        args[0] = json.dumps(ctx,indent=4)
+        args[0] = json.dumps(ctx,indent=4) ## - give JSON-formatted context back to client
     else:
         args[6] = "Could not launch container"
  
@@ -180,8 +181,6 @@ def irods_container_Impl__exec_command_in_application(args,callback,rei):
     else:
         args[3] = args[4] = ''
 
-#   -- for future use -- (currently a rodsuser cannot poll for a stopped container in a delayed rule)
-#
 #   STOP (context, container_id) 
 #        (poll for notebook server to be done and register output)
 #
@@ -196,12 +195,6 @@ def irods_container_Impl__stop_application(args,callback,rei):
     if container: 
         try: container.stop()
         except: pass
-    try:
-        to_register = ctx['selected_app']['output_to_register']
-    except:
-        to_register = {}
-#   for phys_path,output_coll_name in to_register.items():
-#       callback.msiregister_as_admin ( output_coll_name , ctx['compute_resource'], phys_path, "collection", 0)
 
 
 ##  POLL (context, container_id, attributes_out, status_out, looping )
@@ -210,13 +203,14 @@ def irods_container_Impl__stop_application(args,callback,rei):
 #           = '0' or '',  do not loop (check container status only once)
 
 def irods_container_Impl__poll_application(args,callback,rei):
-    if len(args) > 4 or args[4] != "":
-        loop_seconds = int(argv[4])
-    else:
-        loop_seconds = 0
     ctx = to_bytestring (json.loads( args[0] ))
     (container_id, ) = args[1:2]
+    if len(args) > 4 and args[4] != "":
+        loop_seconds = int(args[4])
+    else:
+        loop_seconds = 0
     cli = _docker_client()
+    logfile = tempfile.NamedTemporaryFile(mode="w+",prefix='c2d-poll-log-',delete=False,suffix='-'+container_id[:12])
     while True:
         try:
             container = cli.containers.get(container_id)
@@ -228,18 +222,23 @@ def irods_container_Impl__poll_application(args,callback,rei):
         else:
             args[2] = "{...}" # todo : subset of container.attrs (whole is larger than allotted AVU value field)
             args[3] = to_bytestring( container.status ) # 'created', 'running', exited'
-        if args[3].beginswith("exited"):
+        if args[3].startswith("exited"):
             delayed_register_info = ctx.get( "selected_app", {} ) and \
                                     ctx["selected_app"].get("output_to_register")
             if delayed_register_info:
+                logfile.write("Registering output: {!r}\n".format(delayed_register_info))
                 for physical,logical in delayed_register_info.items():
                     callback.msiregister_as_admin ( logical, ctx['compute_resource'], physical, "collection", 0)
+            logfile.write("Exiting normally\n")
             break
         if loop_seconds != 0:
+            logfile.write("Polling - at {} seconds...\n".format(loop_seconds))
             time.sleep(1)
             loop_seconds -= 1
         else:
-            break;
+            logfile.write("Exiting Poll operation due to timeout\n")
+            break
+        logfile.flush()
     if ctx: ctx["selected_app"]["status"] = args[3]
     args[0] = json.dumps(ctx,indent=4)
 

@@ -12,11 +12,12 @@ irods_policy_list_applications (*host, *config, *lst)
     *lst = eval("list" ++ *rlst) 
 }
 
-irods_policy_poll_application (*host, *context, *id, *attr_out, *loop_seconds) 
+irods_policy_poll_application (*host, *context, *id, *attr_out, *status_out, *loop_seconds) 
 {
     *attr_out = ""
+    *status_out = ""
     remote(*host,"") {
-        irods_container_Impl__poll_application(*context, *id, *attr_out, *loop_seconds)
+        irods_container_Impl__poll_application(*context, *id, *attr_out, *status_out, *loop_seconds)
     }
 }
 

@@ -10,21 +10,26 @@ main
         *id = '' 
         *err = '' 
         *app_name = full_application_name_from_glob (*app, *l)
-        writeLine("stdout","\n===> running container from config: '*app' -> '*app_name' <===\n")
-
+        writeLine("stdout","\nInfo: running container from config: '*app' -> '*app_name'")
         irods_policy_run_application (*host, *context , '', '*outcoll', '{"DEGREES_ROTATION":"10"}',
                                      '*app_name' ,*id,*err) 
         writeLine("stdout",'id=[*id]')                             
         if (*err != '') { writeLine("stdout",'Application warning/error: [*err]') }
         writeLine("stdout",'ctx=[*context]')
-        if (*id != "") {
-            for (*t = 0; *t < 5; *t=*t+1) {
-                *exitcode = "" ; *cmd_stdout = "" 
-                irods_policy_exec_command_in_application (*host, *context ,*id, "jupyter notebook list", *exitcode, *cmd_stdout)
-                *url = detect_notebook_URL (*cmd_stdout)
-                if (*url != "") { writeLine ("stdout", "Jupyter Notebook running at [ *url ]") ; break }
-                if (*exitcode == "") { writeLine("stderr", "ERROR in container exec [[\n*cmd_stdout\n]]"); break }
-                msiSleep("1","0")
+
+        if (*id != "") {  # if it's a detached container...
+            # via POLL, make sure the products are registered upon exit
+            delay("<PLUSET>1s</PLUSET>") { irods_policy_poll_application(*host,*context, *id, *attr_out, *status_out, "240") }
+            # Detect by our naming convention if it's a Notebook app, and display the URL when available
+            if (*app_name like ("*"++"_notebook.json")) {
+                for (*t = 0; *t < *max_url_wait; *t=*t+1) { # url wait is in seconds
+                    *exitcode = "" ; *cmd_stdout = "" 
+                    irods_policy_exec_command_in_application (*host, *context ,*id, "jupyter notebook list", *exitcode, *cmd_stdout)
+                    *url = detect_notebook_URL (*cmd_stdout)
+                    if (*url != "") { writeLine ("stdout", "Jupyter Notebook running at [ *url ]") ; break }
+                    if (*exitcode == "") { writeLine("stderr", "ERROR in container exec [[\n*cmd_stdout\n]]"); break }
+                    msiSleep("1","0")
+                }
             }
         }
     }
@@ -89,5 +94,5 @@ application_context_from_input ( *host, *context, *input_coll_pattern, *input_da
     }
 }
 
-INPUT  *data="a.img.csv", *incoll="%", *outcoll=$"/tempZone/home/alice/output", *app=$"*/sobel_notebook.json", *wait_secs=5
+INPUT *data="square.img.csv", *incoll="%", *outcoll=$"/tempZone/home/alice/output", *app=$"*/sobel_notebook.json", *max_url_wait=10
 OUTPUT ruleExecOut
