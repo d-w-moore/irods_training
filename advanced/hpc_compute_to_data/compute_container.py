@@ -6,6 +6,7 @@ import socket
 import warnings
 import json
 from genquery import row_iterator, AS_DICT, AS_LIST
+import time
 
 #---------------------- support routines, objects ----------------------------
 
@@ -127,7 +128,6 @@ def irods_container_Impl__run_application(args,callback,rei):
         ctx['selected_app'] = {} if not app \
          else to_bytestring (json.loads( _read_data_object(callback, app)))
     _override_environment (ctx, to_bytestring( json.loads(extra_env_vars)))
-    args[0] = json.dumps(ctx,indent=4)
     args[5:7] = ["", ""]  # argument offsets 5,6 => container_id , errmsg
     cli = _docker_client()
     if cli:
@@ -141,18 +141,26 @@ def irods_container_Impl__run_application(args,callback,rei):
         if output_coll:
             host_v_outpath = _ensure_vault_path (callback, output_coll, ctx['compute_resource'], create = True)
             in_out_mounts += ["{0}:{guest_working_dir}/{guest_output_subdir}:rw".format(host_v_outpath,**ctx["selected_app"])]
-            ctx["selected_app"]["output_to_register"] = { host_v_outpath : output_coll }
         run_command = ctx["selected_app"].get("run_command")
-        instance = cli.containers.run( ctx['selected_app']['image'], command = run_command, ports = ctx['selected_app'].get('ports'),
-                                       environment = ctx['selected_app']['environment'], detach = ctx['selected_app'].get('detach', True),
+        instance = cli.containers.run( ctx['selected_app']['image'], command = run_command,
+                                       ports = ctx['selected_app'].get('ports'),
+                                       environment = ctx['selected_app']['environment'], 
+                                       detach = ctx['selected_app'].get('detach', True),
                                        volumes = in_out_mounts, tty = True, remove = True)
-        if output_coll: callback.msiregister_as_admin ( output_coll, ctx['compute_resource'], host_v_outpath, "collection", 0)
         if hasattr(instance,'id'):
-            args[5] = to_bytestring ( instance.id )
+            args[5] = to_bytestring ( instance.id )     # asynchronous case - register outputs when poll finds container exited
+            if output_coll and host_v_outpath:
+                ctx["selected_app"]["output_to_register"] = { host_v_outpath : output_coll }
         else:
-            args[5] = ""; args[6] = "container ID not returned when detach = True"
+            args[5] = ""                                # synchronous case - register outputs immediately
+            args[6] = "container ID not returned when detach = True"
+            if output_coll and host_v_outpath:
+                callback.msiregister_as_admin ( output_coll, ctx['compute_resource'], host_v_outpath, "collection", 0)
+        args[0] = json.dumps(ctx,indent=4)
     else:
         args[6] = "Could not launch container"
+ 
+#==================================================
 
 #
 #  EXEC (context, container_id, command, exitcode_out, stdout_out )
@@ -196,27 +204,44 @@ def irods_container_Impl__stop_application(args,callback,rei):
 #       callback.msiregister_as_admin ( output_coll_name , ctx['compute_resource'], phys_path, "collection", 0)
 
 
-##  POLL (context, container_id, attributes_out, status_out )
+##  POLL (context, container_id, attributes_out, status_out, looping )
+#   looping = '<intvalue>":       how many seconds to loop waiting for exit status if positive
+#                       or indication to loop forever if negative
+#           = '0' or '',  do not loop (check container status only once)
 
 def irods_container_Impl__poll_application(args,callback,rei):
+    if len(args) > 4 or args[4] != "":
+        loop_seconds = int(argv[4])
+    else:
+        loop_seconds = 0
     ctx = to_bytestring (json.loads( args[0] ))
     (container_id, ) = args[1:2]
     cli = _docker_client()
-    try:
-        container = cli.containers.get(container_id)
-    except docker.errors.NotFound: container = None
-    if container is None:
-        args[2] = ""
-        args[3] = "exited?"
-    else:
-        ## - Might want to extract a subset of the available key/values
-        # (otherwise, this is too long to place in an iRODS return variable):
-        #args[2] = "{}".format(to_bytestring(container.attrs))
-        args[2] = "{}"
-        args[3] = to_bytestring( container.status )
-    if ctx: ctx["selected_app"]["status"]  = args[3]
+    while True:
+        try:
+            container = cli.containers.get(container_id)
+        except docker_error_NotFound:
+            container = None
+        if container is None:
+            args[2] = ""
+            args[3] = "exited?"
+        else:
+            args[2] = "{...}" # todo : subset of container.attrs (whole is larger than allotted AVU value field)
+            args[3] = to_bytestring( container.status ) # 'created', 'running', exited'
+        if args[3].beginswith("exited"):
+            delayed_register_info = ctx.get( "selected_app", {} ) and \
+                                    ctx["selected_app"].get("output_to_register")
+            if delayed_register_info:
+                for physical,logical in delayed_register_info.items():
+                    callback.msiregister_as_admin ( logical, ctx['compute_resource'], physical, "collection", 0)
+            break
+        if loop_seconds != 0:
+            time.sleep(1)
+            loop_seconds -= 1
+        else:
+            break;
+    if ctx: ctx["selected_app"]["status"] = args[3]
     args[0] = json.dumps(ctx,indent=4)
-    
 
 def _docker_client(get_info=None, re_raise=False):
     global docker_error_NotFound

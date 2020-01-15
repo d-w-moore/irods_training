@@ -11,22 +11,38 @@ main
         *err = '' 
         *app_name = full_application_name_from_glob (*app, *l)
         writeLine("stdout","\n===> running container from config: '*app' -> '*app_name' <===\n")
+
         irods_policy_run_application (*host, *context , '', '*outcoll', '{"DEGREES_ROTATION":"10"}',
                                      '*app_name' ,*id,*err) 
         writeLine("stdout",'id=[*id]')                             
         if (*err != '') { writeLine("stdout",'Application warning/error: [*err]') }
         writeLine("stdout",'ctx=[*context]')
-        if (*wait_secs > 0) { msiSleep("*wait_secs","0") }         # to ensure notebook server is up before getting URL
-        *exitcode = ""
-        *cmd_stdout = "" 
         if (*id != "") {
-            irods_policy_exec_command_in_application (*host, *context ,*id, "jupyter notebook list", *exitcode, *cmd_stdout)
-            if (*exitcode != "") { 
-                 writeLine("stdout", "[[\n*cmd_stdout\n]]" )
+            for (*t = 0; *t < 5; *t=*t+1) {
+                *exitcode = "" ; *cmd_stdout = "" 
+                irods_policy_exec_command_in_application (*host, *context ,*id, "jupyter notebook list", *exitcode, *cmd_stdout)
+                *url = detect_notebook_URL (*cmd_stdout)
+                if (*url != "") { writeLine ("stdout", "Jupyter Notebook running at [ *url ]") ; break }
+                if (*exitcode == "") { writeLine("stderr", "ERROR in container exec [[\n*cmd_stdout\n]]"); break }
+                msiSleep("1","0")
             }
         }
     }
 }
+
+detect_notebook_URL( *output_buffer)
+{
+  *url = ""
+  msiStrlen(*output_buffer,*initial_length)
+  *buf = trimr(*output_buffer, " :: ")
+  msiStrlen(*buf,*clipped_length)
+  if (*clipped_length != *initial_length) { 
+    *result = triml(*buf, "http")
+    *url = "http" ++ *result
+  }
+  *url
+}
+
 
 #
 #  Utility functions / rules
@@ -34,14 +50,14 @@ main
 
 kvpair_to_json(*x)  
 {   
-    *jstg = "{\n"
+    *json = "{\n"
     *sep = " " 
     foreach (*n in *x) {
-        *jstg = *jstg ++ '*sep "*n": "' ++ *x.*n ++ '"'
+        *json = *json ++ '*sep "*n": "' ++ *x.*n ++ '"'
         *sep = ",\n "
     }
-    *jstg = *jstg ++ "\n}"
-    *jstg
+    *json = *json ++ "\n}"
+    *json
 }
 
 full_application_name_from_glob (*app_sel, *app_lst)
@@ -55,7 +71,6 @@ full_application_name_from_glob (*app_sel, *app_lst)
    }
    *app_path 
 }
-
 
 application_context_from_input ( *host, *context, *input_coll_pattern, *input_data_basename)
 {
@@ -73,7 +88,6 @@ application_context_from_input ( *host, *context, *input_coll_pattern, *input_da
         break
     }
 }
-
 
 INPUT  *data="a.img.csv", *incoll="%", *outcoll=$"/tempZone/home/alice/output", *app=$"*/sobel_notebook.json", *wait_secs=5
 OUTPUT ruleExecOut
