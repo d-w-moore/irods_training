@@ -14,7 +14,7 @@ main
         irods_policy_run_application (*host, *context , '', '*outcoll', '{"DEGREES_ROTATION":"10"}',
                                      '*app_name' ,*id,*err) 
         writeLine("stdout",'id=[*id]')                             
-        if (*err != '') { writeLine("stdout",'Application warning/error: [*err]') }
+        if (*err != '') { writeLine("stdout",'In application launch: [*err]') }
         writeLine("stdout",'ctx=[*context]')
 
         if (*id != "") {  # if it's a detached container...

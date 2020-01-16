@@ -121,18 +121,11 @@ Show the interactive results are now registered in iRODS:
 
 #===========================================================================================
 
-If a VM security (or something else that is running) conflicts with the default http port (8080)
+If a VM security (or something else that is running) conflicts with the default http port (8888)
 used to display the  notebook, choose a new port number and then: 
 
-(optionally):
-
-    * change 8080 to the new port number in Dockerfile.jupyter_sobel and rebuild the docker image
-      'jupyter_sobel:latest'
-
-(but definitely):
-
-    * change 8080 in the sobel_notebook.json app configuration file and iput -f the modified file into 
-      the collection '/tempZone/home/configured_applications'
+    * change all occurrences of the old port "8888" in the sobel_notebook.json app configuration file
+      and iput -f the modified file into the collection '/tempZone/home/configured_applications'
 
 #------------------
 
