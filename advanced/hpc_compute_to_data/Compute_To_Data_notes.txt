@@ -89,7 +89,7 @@ Show the iRODS delay queue watching for the interactive container to exit:
 
         ubuntu $ iqstat
         id     name
-        10097  irods_policy_poll_application(*host, *context, *id, *attr_out, *status_out, "240")  
+        10097  irods_policy_poll_application(*host, *context, *id, *attr_out, *status_out, "600")
 
 
 Highlight the first Jupyter notebook cell and hit <shift-Return> to execute each cell in succession.
