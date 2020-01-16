@@ -25,14 +25,14 @@ class irods_repr(_repr.Repr):
 
 from bytes_unicode_mapper import *
 to_bytestring = lambda struc : map_strings_recursively( struc , to_bytes('utf-8'))
-coll_name_regex = re.compile(r'^/(?P<zone>.*?)/(?P<v_adjunct>((?P<v_parent>.+?)/)?(?P<v_child>[^/]+))$')
+coll_name_regex = re.compile(r'^/(?P<zone>.*?)/(?P<v_relative_path>((?P<v_parent>.+?)/)?(?P<v_child>[^/]+))$')
 #Example logical path decomposition:
-#   /tempZone/home/alice/collection/subcollection
+#   /tempZone/home/alice/collection/subcollection_or_object
 #   [--zone--]
 #   [-------parent_with_zone-------]
-#            [------------v_adjunct--------------]
+#            [--------------v_relative_path----------------]
 #            [------v_parent-------]
-#                                  [---v_child---]
+#                                  [-------v_child---------]
 def _parse_collection_name( name ):
     d = coll_name_regex.match( name ).groupdict()
     d['parent_with_zone'] = '/{zone}/{v_parent}'.format(**d)
@@ -51,7 +51,7 @@ def _ensure_vault_path (callback, coll_name, resc_name, create = False):
     ext_v_path = _resc_vault_path (callback , resc_name)
     if ext_v_path:
         fields = _parse_collection_name (coll_name)
-        phys_path = "/".join((ext_v_path, fields['v_adjunct']))
+        phys_path = "/".join((ext_v_path, fields['v_relative_path']))
         if create and not os.path.isdir(phys_path):
             try: os.makedirs( phys_path )
             except: pass
@@ -60,6 +60,7 @@ def _ensure_vault_path (callback, coll_name, resc_name, create = False):
 
 
 def _list_all_application_configs(callback, ctx, save_rows = None, as_lookup=False):
+#   TODO :  renaming to irods::compute_to_data
     rows = scratch = [] 
     if isinstance(save_rows,list):    rows = save_rows
     elif isinstance(save_rows,tuple): rows = list(save_rows)
