@@ -8,14 +8,18 @@ Setup is similar to what is outlined at:
 
 but we will use this repo ( github.com/d-w-moore/irods_training ) and branch (compute_to_data_2020_01).
 
-Also (after installing the compute-to-data package):
+Also (after installing the compute-to-data and microservice-register_as_admin packages):
+
 
   1. There's a different docker image to build for this version --
+  
      ubuntu $ cd ~/jupyter_container
      ubuntu $ docker build -t jupyter_sobel:latest -f Dockerfile.jupyter_sobel .
 
+
   2. add the line 'from compute_container import *' to /etc/irods/core.py. (This is all that is needed
      in terms of Python rule engine code.)
+
 
   3. Instead of the storage resources/AVUs in the UGM2019 presentation, we create the following
      setup for the data to be routed "compute-side" :
@@ -23,6 +27,7 @@ Also (after installing the compute-to-data package):
      irods $  mkdir /var/lib/irods/compute_Vault
      irods $  iadmin mkresc compute_resc unixfilesystem `hostname`:/var/lib/irods/compute_Vault
      irods $  imeta set -R compute_resc irods::resc_compute_role image_processing
+
 
   4. Create the .json data objects describing C2D applications settings --
 
@@ -33,6 +38,7 @@ Also (after installing the compute-to-data package):
      irods $  imeta set -d sobel_execute.json   irods::compute::application  sobel_auto_run  docker
      irods $  imeta set -d sobel_notebook.json  irods::compute::application  sobel_jupyter_nb  docker
 
+
   5. set the native rulebases in the server_config to:
 
                     "re_rulebase_set": [
@@ -40,7 +46,8 @@ Also (after installing the compute-to-data package):
                         "container_calls",
                         "core"
                     ], 
-                      
+
+
 #-------------------------------------------------------------------------------------------------------
 #                            Running the Compute To Data Demonstration
 #-------------------------------------------------------------------------------------------------------
