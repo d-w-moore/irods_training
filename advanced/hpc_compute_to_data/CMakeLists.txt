@@ -31,6 +31,7 @@ install(
 install(
   FILES
   ${CMAKE_SOURCE_DIR}/launch_container_for_input.r
+  ${CMAKE_SOURCE_DIR}/generate_csv_input.py
   DESTINATION home/ubuntu
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
   )

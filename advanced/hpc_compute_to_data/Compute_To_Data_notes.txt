@@ -45,7 +45,7 @@ Also (after installing the compute-to-data package):
 #                            Running the Compute To Data Demonstration
 #-------------------------------------------------------------------------------------------------------
 
-	ubuntu $ ./generate_csv_input.py >square.img.csv
+	ubuntu $ cd ; python generate_csv_input.py >square.img.csv
 	ubuntu $ icd; imkdir input_data
 	ubuntu $ iput square.img.csv  input_data
 
