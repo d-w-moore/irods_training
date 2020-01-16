@@ -1,3 +1,3 @@
 
-Compute to Data - UGM 2019
---------------------------
+Compute to Data - January 2020
+------------------------------
