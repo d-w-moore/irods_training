@@ -22,7 +22,7 @@ main
             delay("<PLUSET>1s</PLUSET>") { irods_policy_poll_application(*host,*context, *id, *attr_out, *status_out, "600") }
             # Detect by our naming convention if it's a Notebook app, and display the URL when available
             if (*app_name like ("*"++"_notebook.json")) {
-                for (*t = 0; *t < *max_url_wait; *t=*t+1) { # url wait is in seconds
+                for (*t = 0; *t < *max_url_wait; *t=*t+1) { # maximum url wait is in seconds
                     *exitcode = "" ; *cmd_stdout = "" 
                     irods_policy_exec_command_in_application (*host, *context ,*id, "jupyter notebook list", *exitcode, *cmd_stdout)
                     *url = detect_notebook_URL (*cmd_stdout)
@@ -74,7 +74,7 @@ full_application_name_from_glob (*app_sel, *app_lst)
            if (*x like *app_sel)  { *app_path = *x; break; }
        }
    }
-   *app_path 
+   if (*app_path != "") {*app_path} else {*app_sel}
 }
 
 application_context_from_input ( *host, *context, *input_coll_pattern, *input_data_basename)

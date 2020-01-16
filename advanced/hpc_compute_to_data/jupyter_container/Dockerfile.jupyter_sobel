@@ -2,7 +2,7 @@ FROM jupyter/scipy-notebook
 
 ARG  irods_uid=999
 ARG  irods_gid=999
-ARG  notebook_port=8080
+ARG  notebook_port=8888
 ENV  NOTEBOOK_PORT ${notebook_port}
 
 # -- Optional -- upgrade conda:

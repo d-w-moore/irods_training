@@ -67,13 +67,13 @@ def _list_all_application_configs(callback, ctx, save_rows = None, as_lookup=Fal
     if (rows is scratch) or (rows is save_rows):
         rows[:] = [ r for r in row_iterator( 
             "COLL_NAME,DATA_NAME,META_DATA_ATTR_VALUE",
-            "DATA_NAME like '%.json' "
+            ("DATA_NAME like '%.json' "
             "and COLL_NAME like '%/configured_applications' "
             "and COLL_NAME not like '%/trash/%' "
             "and META_DATA_ATTR_NAME = 'irods::compute::application' "
             "and META_DATA_ATTR_VALUE like '_%' "
         #   "and META_DATA_ATTR_UNITS like 'docker' "
-            "and RESC_LOC = '{compute_host}'".format(**ctx) , AS_DICT, callback) ]
+            ).format(**ctx) , AS_DICT, callback) ]
     return [ "{COLL_NAME}/{DATA_NAME}".format(**row) for row in rows ] if not as_lookup else \
            { row["META_DATA_ATTR_VALUE"]:"{COLL_NAME}/{DATA_NAME}".format(**row) for row in rows }
 

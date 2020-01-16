@@ -85,7 +85,7 @@ To launch the "sobel_notebook.json" container interactively:
                    '*app="*/sobel_notebook.json"'
 
                  After a few seconds, the URL of the interactive Jupyter notebook will appear.
-                 e.g. http://0.0.0.0:8080/?token=c9e736ae61059798bd37e05cef03f6b2c3fe8d6ae0bb055c
+                 e.g. http://0.0.0.0:8888/?token=c9e736ae61059798bd37e05cef03f6b2c3fe8d6ae0bb055c
                  ("0.0.0.0" can be replaced with the docker host machine's hostname or IP)
 
 
