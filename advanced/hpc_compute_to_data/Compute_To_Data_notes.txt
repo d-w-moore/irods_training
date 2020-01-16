@@ -3,8 +3,12 @@
 #-------------------------------------------------------------------------------------------------------
 
 Setup is similar to what is outlined at:
+
   http://slides.com/irods/ugm2019-administration-compute-to-data#/10
-but with the following exceptions:
+
+but we'll be using this repo( github.com/d-w-moore/irods_training ) and branch (compute_to_data_2020_01).
+
+Also (after installing the compute-to-data package):
 
   1. set the native rulebases in the server_config to:
 
@@ -33,6 +37,9 @@ but with the following exceptions:
      irods $  imeta set -d sobel_execute.json   irods::compute::application  sobel_auto_run  docker
      irods $  imeta set -d sobel_notebook.json  irods::compute::application  sobel_jupyter_nb  docker
 
+  5. Build the jupyter_sobel:latest docker image 
+     ubuntu $ cd jupyter_container
+     ubuntu $ docker build
 #-------------------------------------------------------------------------------------------------------
 #                            Running the Compute To Data Demonstration
 #-------------------------------------------------------------------------------------------------------
