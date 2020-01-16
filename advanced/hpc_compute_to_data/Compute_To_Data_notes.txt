@@ -6,18 +6,14 @@ Setup is similar to what is outlined at:
 
   http://slides.com/irods/ugm2019-administration-compute-to-data#/10
 
-but we'll be using this repo( github.com/d-w-moore/irods_training ) and branch (compute_to_data_2020_01).
+but we will use this repo ( github.com/d-w-moore/irods_training ) and branch (compute_to_data_2020_01).
 
 Also (after installing the compute-to-data package):
 
-  1. set the native rulebases in the server_config to:
+  1. There's a different docker image to build for this version --
+     ubuntu $ cd ~/jupyter_container
+     ubuntu $ docker build -t jupyter_sobel:latest -f Dockerfile.jupyter_sobel .
 
-                    "re_rulebase_set": [
-                        "compute_to_data_routing",
-                        "container_calls",
-                        "core"
-                    ], 
-                      
   2. add the line 'from compute_container import *' to /etc/irods/core.py. (This is all that is needed
      in terms of Python rule engine code.)
 
@@ -37,9 +33,14 @@ Also (after installing the compute-to-data package):
      irods $  imeta set -d sobel_execute.json   irods::compute::application  sobel_auto_run  docker
      irods $  imeta set -d sobel_notebook.json  irods::compute::application  sobel_jupyter_nb  docker
 
-  5. Build the jupyter_sobel:latest docker image 
-     ubuntu $ cd jupyter_container
-     ubuntu $ docker build
+  5. set the native rulebases in the server_config to:
+
+                    "re_rulebase_set": [
+                        "compute_to_data_routing",
+                        "container_calls",
+                        "core"
+                    ], 
+                      
 #-------------------------------------------------------------------------------------------------------
 #                            Running the Compute To Data Demonstration
 #-------------------------------------------------------------------------------------------------------

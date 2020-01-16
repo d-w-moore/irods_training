@@ -22,6 +22,14 @@ install(
 
 install(
   FILES
+  ${CMAKE_SOURCE_DIR}/jupyter_container/Dockerfile.jupyter_sobel
+  ${CMAKE_SOURCE_DIR}/jupyter_container/sobel.ipynb
+  DESTINATION home/ubuntu/jupyter_container
+  PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
+  )
+
+install(
+  FILES
   ${CMAKE_SOURCE_DIR}/launch_container_for_input.r
   DESTINATION home/ubuntu
   PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
