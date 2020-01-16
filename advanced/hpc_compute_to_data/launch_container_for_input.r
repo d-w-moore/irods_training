@@ -19,7 +19,7 @@ main
 
         if (*id != "") {  # if it's a detached container...
             # via POLL, make sure the products are registered upon exit
-            delay("<PLUSET>1s</PLUSET>") { irods_policy_poll_application(*host,*context, *id, *attr_out, *status_out, "240") }
+            delay("<PLUSET>1s</PLUSET>") { irods_policy_poll_application(*host,*context, *id, *attr_out, *status_out, "600") }
             # Detect by our naming convention if it's a Notebook app, and display the URL when available
             if (*app_name like ("*"++"_notebook.json")) {
                 for (*t = 0; *t < *max_url_wait; *t=*t+1) { # url wait is in seconds
